@@ -95,9 +95,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-            methods=('get',),
-            detail=False,
-            permission_classes=(IsAuthorOrAdminPermission,)
+        methods=('get',),
+        detail=False,
+        permission_classes=(IsAuthorOrAdminPermission,)
     )
     def download_shopping_cart(self, request):
         ingredients = Ingredient.objects.filter(
