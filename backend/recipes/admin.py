@@ -10,15 +10,8 @@ class IngredientsInline(admin.TabularInline):
     extra = 1
     min_num = 1
 
-
-class TagsInline(admin.TabularInline):
-    model = Recipe.tags.through
-    extra = 1
-    # Не установил min num тут, потому что поле напрямую связано
-    # с моделью Тегов и админка не дает оставить его пустым,
-    # а дублирование приводит к необходимости указать значения в двух
-    # полях формы одновременно. Таким образом, сейчас просто есть выбор
-    # указать тег в связях или в поле тега, но указать его придется обязательно
+# Не добавил сюда теги, потому что у них прямая связь с рецептами,
+# без доп таблицы, и админка не дает пропустить выбор тега
 
 
 @admin.register(Tag)
@@ -46,7 +39,7 @@ class RecipesAdmin(admin.ModelAdmin):
     search_fields = ('name', 'tags', 'author')
     list_filter = ('name', 'tags', 'author')
     empty_value_display = '-пусто-'
-    inlines = (IngredientsInline, TagsInline)
+    inlines = (IngredientsInline,)
 
     def favorites_count(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
