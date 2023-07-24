@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from djoser.views import TokenCreateView, TokenDestroyView
 
-from users.views import CustomUserViewSet
+from api.views import CustomUserViewSet
 
 
 app_name = 'users'

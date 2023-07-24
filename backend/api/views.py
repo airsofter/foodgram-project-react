@@ -1,17 +1,23 @@
 from rest_framework.decorators import action
-from rest_framework import viewsets, filters, exceptions, status
+from rest_framework import (
+    viewsets, filters, exceptions, status, permissions
+)
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from django.db.models import Sum
 from django.http import HttpResponse
+from djoser.views import UserViewSet
 
-from recipes.serializers import (
+from api.serializers import (
     IngredientSerializer, TagSerializer,
     ReadRecipeSerializer, CreateRecipeSerializer,
 )
-from users.serializers import ShortRecipeSerializer
+from api.serializers import ShortRecipeSerializer
 from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
-from recipes.permissions import IsAuthorOrAdminPermission
+from api.permissions import IsAuthorOrAdminPermission
+from api.serializers import SubscriptionSerializer
+from users.models import User, Subscription
+from api.filters import RecipeFilter
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -30,6 +36,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = CreateRecipeSerializer
     permission_classes = (IsAuthorOrAdminPermission,)
+    filter_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -38,6 +45,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+        # Этот метод написал, потому что тут получаю автора рецепта
 
     @action(
         methods=('post', 'delete'),
@@ -47,7 +55,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-        favorite = recipe.recipe_favorite.filter(
+        favorite = recipe.favorites.filter(
             user=user
         ).exists()
 
@@ -55,7 +63,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
             if favorite:
                 raise exceptions.ValidationError('Рецепт уже в избранном')
             favorite = Favorite.objects.create(user=user, recipe=recipe)
-            print(type(favorite))
             serializer = self.get_serializer(favorite.recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -75,7 +82,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-        in_shopping_cart = recipe.recipe_shopping.filter(user=user)
+        in_shopping_cart = recipe.shopping_cart.filter(user=user)
 
         if request.method == 'POST':
             if in_shopping_cart:
@@ -101,7 +108,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         ingredients = Ingredient.objects.filter(
-            ingredient_recipes__recipe__recipe_shopping__user=request.user
+            ingredient_recipes__recipe__shopping_cart__user=request.user
         ).values(
             'name', 'measurement_unit'
         ).annotate(
@@ -120,3 +127,57 @@ class RecipesViewSet(viewsets.ModelViewSet):
             'attachment; filename=shopping-cart.txt'
         )
         return response
+
+
+class CustomUserViewSet(UserViewSet):
+    # Не соввсем понял
+    # Ведь здесь происходит не только чтение, но и пост запросы,
+    # поэтому просто ListAPIView не получится обойтись, придется
+    # писать еще несколько отдельных функций и переделывать логику...
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    queryset = User.objects.all()
+
+    @action(
+        methods=('get',),
+        detail=False,
+        serializer_class=SubscriptionSerializer,
+        permission_classes=(permissions.IsAuthenticated,)
+    )
+    def subscriptions(self, request):
+        authors = User.objects.filter(author_subscription__user=request.user)
+        paginate_authors = self.paginate_queryset(authors)
+        serializer = self.get_serializer(paginate_authors, many=True)
+        return Response(serializer.data)
+
+    @action(
+        methods=('post', 'delete'),
+        detail=True,
+        serializer_class=SubscriptionSerializer,
+        permission_classes=(permissions.IsAuthenticated,)
+    )
+    def subscribe(self, request, id):
+        author = get_object_or_404(User, id=id)
+        follover = request.user
+        subscription = follover.user_subscription.filter(
+            author=author
+        ).exists()
+
+        if request.method == 'POST':
+            if subscription:
+                raise exceptions.ValidationError(
+                    'Вы уже подписаны на этого автора'
+                )
+            Subscription.objects.create(user=follover, author=author)
+            serializer = self.get_serializer(author)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if not subscription:
+            raise exceptions.ValidationError(
+                'Вы не подписаны на этого автора'
+            )
+        get_object_or_404(
+            Subscription,
+            user=follover,
+            author=author
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

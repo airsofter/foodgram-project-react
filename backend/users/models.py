@@ -2,16 +2,19 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 
+from foodgram.settings import LENGTH_254
+
 
 class User(AbstractUser):
     email = models.EmailField(
         unique=True,
         db_index=True,
-        max_length=254
+        max_length=LENGTH_254,
+        verbose_name='email'
     )
 
     class Meta:
-        ordering = ('-pk',)
+        ordering = ('username',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
@@ -34,7 +37,7 @@ class Subscription(models.Model):
     )
 
     class Meta:
-        ordering = ('-pk',)
+        ordering = ('user', 'author')
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
