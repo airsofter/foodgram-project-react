@@ -1,21 +1,19 @@
 from rest_framework.decorators import action
 from rest_framework import (
-    viewsets, filters, exceptions, status, permissions
+    viewsets, filters, exceptions, status, permissions, generics
 )
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from django.db.models import Sum
 from django.http import HttpResponse
-from djoser.views import UserViewSet
 
 from api.serializers import (
     IngredientSerializer, TagSerializer,
     ReadRecipeSerializer, CreateRecipeSerializer,
+    SubscriptionSerializer, ShortRecipeSerializer
 )
-from api.serializers import ShortRecipeSerializer
 from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
 from api.permissions import IsAuthorOrAdminPermission
-from api.serializers import SubscriptionSerializer
 from users.models import User, Subscription
 from api.filters import RecipeFilter
 
@@ -129,48 +127,31 @@ class RecipesViewSet(viewsets.ModelViewSet):
         return response
 
 
-class CustomUserViewSet(UserViewSet):
-    # Не соввсем понял
-    # Ведь здесь происходит не только чтение, но и пост запросы,
-    # поэтому просто ListAPIView не получится обойтись, придется
-    # писать еще несколько отдельных функций и переделывать логику...
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+class SubscribtionsView(generics.ListAPIView):
+    # Основные операции юзера (регистрация, профиль, лист и тд)
+    # подключил в джосере. Пагинация дефолтная тоже в настройках
     queryset = User.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
-    @action(
-        methods=('get',),
-        detail=False,
-        serializer_class=SubscriptionSerializer,
-        permission_classes=(permissions.IsAuthenticated,)
-    )
-    def subscriptions(self, request):
+    def get(self, request):
         authors = User.objects.filter(author_subscription__user=request.user)
         paginate_authors = self.paginate_queryset(authors)
         serializer = self.get_serializer(paginate_authors, many=True)
         return Response(serializer.data)
 
-    @action(
-        methods=('post', 'delete'),
-        detail=True,
-        serializer_class=SubscriptionSerializer,
-        permission_classes=(permissions.IsAuthenticated,)
-    )
-    def subscribe(self, request, id):
-        author = get_object_or_404(User, id=id)
+
+class SubscribtionsCreateDeleteView(generics.RetrieveDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def delete(self, request, pk):
+        author = get_object_or_404(User, pk=pk)
         follover = request.user
         subscription = follover.user_subscription.filter(
             author=author
         ).exists()
-
-        if request.method == 'POST':
-            if subscription:
-                raise exceptions.ValidationError(
-                    'Вы уже подписаны на этого автора'
-                )
-            Subscription.objects.create(user=follover, author=author)
-            serializer = self.get_serializer(author)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         if not subscription:
             raise exceptions.ValidationError(
                 'Вы не подписаны на этого автора'
@@ -181,3 +162,18 @@ class CustomUserViewSet(UserViewSet):
             author=author
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def post(self, request, pk):
+        author = get_object_or_404(User, pk=pk)
+        follover = request.user
+        subscription = follover.user_subscription.filter(
+            author=author
+        ).exists()
+        if subscription:
+            raise exceptions.ValidationError(
+                'Вы уже подписаны на этого автора'
+            )
+        Subscription.objects.create(user=follover, author=author)
+        serializer = self.get_serializer(author)
+        print(author)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
