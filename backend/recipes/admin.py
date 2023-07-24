@@ -10,8 +10,11 @@ class IngredientsInline(admin.TabularInline):
     extra = 1
     min_num = 1
 
-# Не добавил сюда теги, потому что у них прямая связь с рецептами,
-# без доп таблицы, и админка не дает пропустить выбор тега
+
+class TagsInline(admin.TabularInline):
+    model = Recipe.tags.through
+    extra = 1
+    min_num = 1
 
 
 @admin.register(Tag)
@@ -35,11 +38,15 @@ class IngredientsAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipesAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'author', 'favorites_count')
+    fields = (
+        'name', 'author', 'image', 'description',
+        'cooking_time'
+    )
     list_editable = ('name', 'author')
     search_fields = ('name', 'tags', 'author')
     list_filter = ('name', 'tags', 'author')
     empty_value_display = '-пусто-'
-    inlines = (IngredientsInline,)
+    inlines = (IngredientsInline, TagsInline)
 
     def favorites_count(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
