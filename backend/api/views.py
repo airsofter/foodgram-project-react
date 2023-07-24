@@ -43,7 +43,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-        # Этот метод написал, потому что тут получаю автора рецепта
 
     @action(
         methods=('post', 'delete'),
@@ -53,7 +52,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-        favorite = recipe.favorites.filter(
+        favorite = recipe.favorite.filter(
             user=user
         ).exists()
 
@@ -128,8 +127,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
 
 class SubscribtionsView(generics.ListAPIView):
-    # Основные операции юзера (регистрация, профиль, лист и тд)
-    # подключил в джосере. Пагинация дефолтная тоже в настройках
     queryset = User.objects.all()
     serializer_class = SubscriptionSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -175,5 +172,4 @@ class SubscribtionsCreateDeleteView(generics.RetrieveDestroyAPIView):
             )
         Subscription.objects.create(user=follover, author=author)
         serializer = self.get_serializer(author)
-        print(author)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

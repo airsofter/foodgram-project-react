@@ -1,9 +1,11 @@
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from colorfield.fields import ColorField
 
 from users.models import User
-from foodgram.settings import LENGTH_10, LENGTH_200
+from foodgram.settings import (
+    LENGTH_10, LENGTH_200, MAX_AMOUNT, MAX_TIME, MIN
+)
 
 
 class Ingredient(models.Model):
@@ -89,8 +91,12 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
+        # указал макс значения в пределах разумного, т.к. в документации
+        # не указаны какие то конкретные цифры
         validators=[MinValueValidator(
-            1, 'Время должно быть больше нуля'
+            MIN, 'Время должно быть больше нуля'
+        ), MaxValueValidator(
+            MAX_TIME, 'Время не должно превышать 300 минут'
         )]
     )
     pub_date = models.DateTimeField(
@@ -130,7 +136,9 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество ингредиентов в рецепте',
         validators=[MinValueValidator(
-            1, 'Количество должно быть больше нуля'
+            MIN, 'Количество должно быть больше нуля'
+        ), MaxValueValidator(
+            MAX_AMOUNT, 'Количество не должно превышать 1000 ед.'
         )]
     )
 

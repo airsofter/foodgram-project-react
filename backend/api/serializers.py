@@ -144,8 +144,6 @@ class CreateRecipeSerializer(ReadRecipeSerializer):
     ingredients = IngredientsInRecipeSerializer(
         many=True, source='recipe_ingredients'
     )
-    # Написал source потому что иначе не получится обратиться к нужному ключу
-    # на 202 строке и подобных
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.only('id'),
         many=True
