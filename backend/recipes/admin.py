@@ -8,11 +8,17 @@ from recipes.models import (
 class IngredientsInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
+    min_num = 1
 
 
 class TagsInline(admin.TabularInline):
     model = Recipe.tags.through
     extra = 1
+    # Не установил min num тут, потому что поле напрямую связано
+    # с моделью Тегов и админка не дает оставить его пустым,
+    # а дублирование приводит к необходимости указать значения в двух
+    # полях формы одновременно. Таким образом, сейчас просто есть выбор
+    # указать тег в связях или в поле тега, но указать его придется обязательно
 
 
 @admin.register(Tag)
