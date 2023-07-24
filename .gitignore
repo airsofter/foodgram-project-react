@@ -130,3 +130,9 @@ dmypy.json
 
 # .idea
 .idea
+
+backend/foodgram/temp.py
+backend/media/
+backend/backend_media/
+
+*.bak
