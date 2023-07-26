@@ -91,8 +91,6 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
-        # указал макс значения в пределах разумного, т.к. в документации
-        # не указаны какие то конкретные цифры
         validators=[MinValueValidator(
             MIN, 'Время должно быть больше нуля'
         ), MaxValueValidator(

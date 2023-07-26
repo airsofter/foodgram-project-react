@@ -4,6 +4,8 @@ from rest_framework import (
 )
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from django.http import HttpResponse
 
@@ -23,18 +25,21 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    pagination_class = None
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    pagination_class = None
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = CreateRecipeSerializer
     permission_classes = (IsAuthorOrAdminPermission,)
-    filter_class = RecipeFilter
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -68,7 +73,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 'Рецепт не находится в избранном'
             )
         get_object_or_404(Favorite, user=user, recipe=recipe).delete()
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -130,12 +134,13 @@ class SubscribtionsView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = SubscriptionSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = PageNumberPagination
 
     def get(self, request):
         authors = User.objects.filter(author_subscription__user=request.user)
         paginate_authors = self.paginate_queryset(authors)
         serializer = self.get_serializer(paginate_authors, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
 
 class SubscribtionsCreateDeleteView(generics.RetrieveDestroyAPIView):
