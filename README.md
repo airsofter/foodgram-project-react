@@ -77,7 +77,11 @@ docker-compose start
 Чтобы посмотреть спецификацию API в формате Redoc, нужно локально запустить 
 проект и перейти на страницу http://localhost/api/docs/
 
+### Развернутый проект
 
+foodrammprojectapi.ddns.net
+Логин: admin@admin.ru
+Пароль: 1234
 
 ### Автор
 
