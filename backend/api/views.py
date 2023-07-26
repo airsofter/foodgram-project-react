@@ -17,7 +17,7 @@ from api.serializers import (
 from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
 from api.permissions import IsAuthorOrAdminPermission
 from users.models import User, Subscription
-from api.filters import RecipeFilter
+from api.filters import RecipeFilter, IngredientsFilter
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -29,7 +29,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (IngredientsFilter,)
     search_fields = ('^name',)
     pagination_class = None
 

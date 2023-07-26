@@ -5,6 +5,7 @@ volumes:
   static:
   media:
 
+
 services:
 
   db:
@@ -12,17 +13,17 @@ services:
     env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
-    ports: 
+    ports:
       - ${DB_PORT}:${DB_PORT}
     command: -p ${DB_PORT}
-    
+
   backend:
     build:
       context: ../backend
       dockerfile: Dockerfile
     env_file: .env
     restart: always
-    ports: 
+    ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
     volumes:
       - ../backend:/backend
@@ -38,11 +39,10 @@ services:
       - ../frontend/:/app/result_build/
 
   nginx:
-    # image: nginx:1.19.3
-    build: .
+    image: nginx:1.19.3
     ports:
       # - ${NGINX_PORT}:${NGINX_PORT}
-      - "9090:80"
+      - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
