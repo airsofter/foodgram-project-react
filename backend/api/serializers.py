@@ -58,6 +58,8 @@ class SubscriptionSerializer(CustomUserSerializer):
 
     def get_recipes(self, author):
         recipes = Recipe.objects.filter(author=author)
+        recipe_limit = self.context['request'].GET.get('recipes_limit')
+        recipes = recipes[:int(recipe_limit)] if recipe_limit else recipes
         serializer = ShortRecipeSerializer(recipes, many=True)
         return serializer.data
 
