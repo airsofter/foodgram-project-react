@@ -1,6 +1,6 @@
 from rest_framework.decorators import action
 from rest_framework import (
-    viewsets, filters, exceptions, status, permissions, generics
+    viewsets, exceptions, status, permissions, generics
 )
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
