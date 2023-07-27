@@ -177,7 +177,9 @@ class CreateRecipeSerializer(ReadRecipeSerializer):
             return
 
     def validate_name(self, obj):
-        if not re.match(r"\w*[a-zA-Zа-яА-Я]\w*", obj['name']):
+        from sys import stderr
+        print(obj, file=stderr)
+        if not re.match(r"\w*[a-zA-Zа-яА-Я]\w*", obj):
             raise serializers.ValidationError(
                 'Название должно содержать буквы и начинаться с буквы'
             )
