@@ -2,6 +2,7 @@ from rest_framework import serializers
 from drf_base64.fields import Base64ImageField
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from django.core.validators import MinValueValidator
+import re
 
 from recipes.models import (
     Ingredient, Tag,
@@ -174,6 +175,13 @@ class CreateRecipeSerializer(ReadRecipeSerializer):
                     f'У рецепта не может быть одинаковых {string}'
                 )
             return
+
+    def validate_name(self, obj):
+        if not re.match(r"\w*[a-zA-Zа-яА-Я]\w*", obj['name']):
+            raise serializers.ValidationError(
+                'Название должно содержать буквы и начинаться с буквы'
+            )
+        return obj
 
     def validate(self, attrs):
         if not self.partial:
